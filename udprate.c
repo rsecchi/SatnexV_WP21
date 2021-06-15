@@ -5,7 +5,7 @@
 
 /* CFLAGS=-lpcap make udprate */
 
-#define MAX_FEATURES   32
+#define MAX_FEATURES   512
 
 int started;
 int num_intv, col;
@@ -14,11 +14,16 @@ struct timeval start_time;
 long long curr_data;
 
 long long tick_us;
-long long begin_us, end_us;
+long long begin_us, end_us, end_time;
 long long now;
 long long bin_end;
 
 char* label;
+double bitrate;
+double scale_factor;
+
+long long total_data;
+long long duration_us;
 
 long long delta(struct timeval t1, struct timeval t2)
 {
@@ -28,6 +33,23 @@ long long delta(struct timeval t1, struct timeval t2)
 	x += t1.tv_usec - t2.tv_usec;
 
 	return x;
+}
+
+void pre_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
+{
+	if (!started)
+	{
+		start_time = h->ts;
+		started = 1;
+		return;
+	}
+
+	now = delta(h->ts, start_time);
+	
+	if (now >= begin_us && now <= end_us) {
+		total_data += h->caplen;
+		end_time = now;
+	}
 }
 
 void main_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
@@ -53,8 +75,10 @@ void main_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 			col++;
 			if (col==num_intv) {
 				for(k=0; k<num_intv-1; k++)
-					printf("%7lld,", feature[k]);
-				printf("%7lld, %s\n", feature[num_intv-1], label);
+					printf("%10.5lf,", feature[k]*scale_factor);
+				printf("%10.5lf, %s\n", 
+						feature[num_intv-1]*scale_factor,
+					 	label);
 				col = 0;
 			}
 			
@@ -69,6 +93,7 @@ void main_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 
 int main(int argc, char* argv[])
 {
+	int i;
 	char err_string[PCAP_ERRBUF_SIZE];
 	pcap_t *handle = NULL;
 
@@ -100,6 +125,29 @@ int main(int argc, char* argv[])
 
 	label = argv[6];
 
+	pcap_loop(handle, -1, pre_loop, NULL);
+	pcap_close(handle);
+	duration_us = end_time - begin_us;
+	bitrate = (((double)(total_data)) / duration_us)*1e6;
+	scale_factor = 1e6/(bitrate*tick_us);
+
+	/*
+	printf("total data: %lld\n", total_data);
+	printf("total duration (us): %lld\n", duration_us);
+	printf("bitrate (bps): %lf\n", bitrate);
+	printf("scale_factor: %.15lf\n", scale_factor);
+
+	exit(0);
+	*/
+
+	// print header
+	for(i=0; i<num_intv; i++)
+		printf("F%d,", i);
+	printf("label\n");
+
+	handle = pcap_open_offline(argv[1], err_string);
+	started = 0;
 	pcap_loop(handle, -1, main_loop, NULL);
+	fprintf(stderr, "bitrate (bps): %lf\n", bitrate);
 }
 
