@@ -1,8 +1,7 @@
 #!/bin/bash
 
-BINSIZE_MS=1000
-NUM_BINS=10
-
+BINSIZE_MS=$1
+NUM_BINS=$2
 
 trap 'rm -f "$TMP0" "$TMP1" "$TMP2"' EXIT
 TMP0=$(mktemp) || exit 1
@@ -16,7 +15,8 @@ do
 	if [ -z $fname ]; then continue; fi
 	if [ $fname = "#" ]; then continue; fi
 
-	echo ./udprate $fname $BINSIZE_MS $NUM_BINS $start $end $label 
+	echo $fname $start $end
+
 	./udprate $fname $BINSIZE_MS $NUM_BINS $start $end $label > $TMP0
 
 	awk 'NR==1' $TMP0 > $TMP1
@@ -27,4 +27,5 @@ done
 cat $TMP1 $TMP2 > GT.csv
 
 
+./ml_engine.py
 
