@@ -17,6 +17,28 @@
 
 using namespace ns3;
 
+void print_route(Ptr<Node> node0)
+{
+  Ipv4StaticRoutingHelper helper;
+  Ptr<Ipv4> stack = node0 -> GetObject<Ipv4>();
+  Ptr<Ipv4StaticRouting> staticrouting = helper.GetStaticRouting(stack);
+
+  uint32_t numroutes = staticrouting->GetNRoutes();
+
+  Ipv4RoutingTableEntry entry;
+  std::cout << "Routing table for device: " <<
+      Names::FindName(node0) << "\n";
+  std::cout << "Destination\tMask\t\tGateway\t\tIface\n";
+
+  for (uint32_t i =0 ; i<numroutes;i++) {
+     entry = staticrouting->GetRoute(i);
+     std::cout << entry.GetDestNetwork() << "\t"
+               << entry.GetDestNetworkMask() << "\t"
+               << entry.GetGateway() << "\t\t"
+               << entry.GetInterface() << "\n";
+  }
+
+}
 
 int 
 main (int argc, char *argv[])
@@ -55,7 +77,7 @@ main (int argc, char *argv[])
  
   PointToPointHelper p2p;
   p2p.SetDeviceAttribute("DataRate", StringValue ("500Kbps"));
-  p2p.SetChannelAttribute("Delay", StringValue ("50ms"));
+  p2p.SetChannelAttribute("Delay", StringValue ("250ms"));
 
   NetDeviceContainer devs = p2p.Install (linknodes);
 
@@ -72,18 +94,37 @@ main (int argc, char *argv[])
   nodes2.Add (linknodes.Get (0));
   
 
-
   /* Access network (LAN) */
   NetDeviceContainer devices2 = csma.Install(nodes2);
   tapBridge.SetAttribute ("DeviceName", StringValue ("tap-right"));
   tapBridge.Install (nodes2.Get (0), devices2.Get (0));
-
   ipv4.SetBase ("10.1.2.0", "255.255.255.0", "0.0.0.2");
   ipv4.Assign (NetDeviceContainer (devices2.Get (1)));
 
 
+  /* Setup Routing */
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();  
 
+  
+  Ptr<Node> node0 = nodes.Get (1);         // satellite terminal
+  Ptr<Node> node1 = linknodes.Get (0);     // satellite gateway
+  
+  Ipv4StaticRoutingHelper helper;
+  Ptr<Ipv4> myip0 = node0->GetObject<Ipv4>();
+  Ptr<Ipv4> myip1 = node1->GetObject<Ipv4>();
 
+  Ptr<Ipv4StaticRouting> router0 = helper.GetStaticRouting(myip0);
+  Ptr<Ipv4StaticRouting> router1 = helper.GetStaticRouting(myip1);
+
+  router0->AddNetworkRouteTo("10.1.2.0", "255.255.255.0", "0.0.0.0", 1);
+  router0->SetDefaultRoute("0.0.0.0", 1);
+  router1->AddNetworkRouteTo("10.1.1.0", "255.255.255.0", "0.0.0.0", 1);
+  router1->SetDefaultRoute("10.1.2.1", 2);
+
+
+  print_route(node0);
+  print_route(node1);
+
+  p2p.EnablePcapAll ("myfirst");
   Simulator::Run ();
 }
