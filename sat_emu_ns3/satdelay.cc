@@ -58,6 +58,7 @@ main (int argc, char *argv[])
   csma.SetChannelAttribute ("DataRate", StringValue ("100Mbps"));
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));
   NetDeviceContainer devices = csma.Install (nodes);
+  // csma.EnablePcapAll("in_csma");
 
   TapBridgeHelper tapBridge;
   tapBridge.SetAttribute ("Mode", StringValue ("UseLocal"));
@@ -117,14 +118,16 @@ main (int argc, char *argv[])
   Ptr<Ipv4StaticRouting> router1 = helper.GetStaticRouting(myip1);
 
   router0->AddNetworkRouteTo("10.1.2.0", "255.255.255.0", "0.0.0.0", 1);
-  router0->SetDefaultRoute("0.0.0.0", 1);
+  router0->AddNetworkRouteTo("10.12.0.0", "255.255.255.0", "10.1.1.1", 2);
+  router0->SetDefaultRoute("10.1.3.1", 1);
   router1->AddNetworkRouteTo("10.1.1.0", "255.255.255.0", "0.0.0.0", 1);
+  router1->AddNetworkRouteTo("10.12.0.0", "255.255.255.0", "10.1.3.2", 1);
   router1->SetDefaultRoute("10.1.2.1", 2);
 
 
   print_route(node0);
   print_route(node1);
 
-  p2p.EnablePcapAll ("myfirst");
+  // p2p.EnablePcapAll ("myfirst");
   Simulator::Run ();
 }

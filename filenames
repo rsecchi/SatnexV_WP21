@@ -6,19 +6,19 @@
 
 
 # This is the first video meeting
-../QUIC_traces/RTP-google-meet.pcapng   326   -1   0
+repo/RTP-google-meet.pcapng   326   -1   0
 
 
 # Some YouTube traffic catured by Ana
-../QUIC_traces/youtube+web.pcpng.pcapng  551 630   1
+repo/youtube+web.pcpng.pcapng  551 630   1
 
 # Three YouTube videos back to back
-../QUIC_traces/YouTube-160621-chrome-UDP.pcapng      0  240  1
-../QUIC_traces/YouTube-160621-chrome-UDP.pcapng    331  470  1
-../QUIC_traces/YouTube-160621-chrome-UDP.pcapng    550  643  1
-../QUIC_traces/YouTube-160621-chrome-UDP.pcapng    730  927  1
-../QUIC_traces/YouTube-160621-chrome-UDP.pcapng   1022 1154  1
-../QUIC_traces/YouTube-160621-chrome-UDP.pcapng   1250 1345  1
-../QUIC_traces/YouTube-160621-chrome-UDP.pcapng   1570 1680  1
-../QUIC_traces/YouTube-160621-chrome-UDP.pcapng   1740 1910  1
+repo/YouTube-160621-chrome-UDP.pcapng      0  240  1
+repo/YouTube-160621-chrome-UDP.pcapng    331  470  1
+repo/YouTube-160621-chrome-UDP.pcapng    550  643  1
+repo/YouTube-160621-chrome-UDP.pcapng    730  927  1
+repo/YouTube-160621-chrome-UDP.pcapng   1022 1154  1
+repo/YouTube-160621-chrome-UDP.pcapng   1250 1345  1
+repo/YouTube-160621-chrome-UDP.pcapng   1570 1680  1
+repo/YouTube-160621-chrome-UDP.pcapng   1740 1910  1
 
