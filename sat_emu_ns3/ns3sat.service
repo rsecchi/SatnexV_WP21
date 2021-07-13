@@ -1,0 +1,12 @@
+[Unit]
+Description=ns-3 satellite emulator
+Before=openvpn-server@server.service
+
+[Service]
+ExecStart=/root/workspace/SatnexV_WP21/sat_emu_ns3/satconfig.sh
+
+
+[Install]
+WantedBy=multi-user.target
+
+
