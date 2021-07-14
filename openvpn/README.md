@@ -41,6 +41,9 @@ easyrsa gen-dh
 which creates the file pki/dh.pem after a while.
 
 
+
+
+
 ==== Creating OpenVPN server and client configuration files ========
 
 The following configuration code should be inserted in server.conf
@@ -69,9 +72,30 @@ server-bridge 10.1.1.5 255.255.255.0 10.1.1.10 10.1.1.20
 
 ```
 
-Then embed all the certificates:
+Then, embed all the certificates and the DH pair in the configuration file (or provide pointers):
 
+```
+echo '<ca>' >> server.conf
+cat pki/ca.crt >> server.conf
+echo '</ca>' >> server.conf
 
+echo '<cert>' >> server.conf
+cat pki/issued/myserver.crt >> server.conf
+echo '</cert>' >> server.conf
 
+echo '<key>' >> server.conf
+cat pki/private/myserver.key >> server.conf
+echo '</key>' >> server.conf
+
+echo '<dh>' >> server.conf
+cat pki/dh.pem >> server.conf
+echo '</dh>' >> server.conf
+
+```
+
+The file server.conf is ready to be checked:
+```
+openvpn --config server.conf
+```
 
 
