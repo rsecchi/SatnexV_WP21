@@ -44,7 +44,7 @@ which creates the file pki/dh.pem after a while.
 
 
 
-==== Creating OpenVPN server and client configuration files ========
+==== Creating OpenVPN server configuration  ========
 
 The following configuration code should be inserted in server.conf
 
@@ -97,5 +97,47 @@ The file server.conf is ready to be checked:
 ```
 openvpn --config server.conf
 ```
+
+
+======== Creating client configuration ============
+
+The client configurations are containted in files .ovpn. Here we create the file user.ovpn.
+
+
+```
+; This is a client configuration
+client 
+
+; The client must support TAP
+dev tap
+
+; The address of the server (replace this with your address)
+remote 192.168.0.26
+
+; Don't bind the socket if you want to test server and client on the same machine
+nobind
+```
+
+After, embed all the client certificates (the DH file is only used by the server):
+```
+echo '<ca>' >> user.ovpn
+cat pki/ca.crt >> user.ovpn
+echo '</ca>' >> user.ovpn
+
+echo '<cert>' >> user.ovpn
+cat pki/issued/myclient.crt >> user.ovpn
+echo '</cert>' >> user.ovpn
+
+echo '<key>' >> user.ovpn
+cat pki/private/myclient.key >> user.ovpn
+echo '</key>' >> user.ovpn
+```
+
+Now, test the client configuration:
+```
+openvpn --config user.ovpn
+```
+
+
 
 
