@@ -139,5 +139,19 @@ openvpn --config user.ovpn
 ```
 
 
+===== Enable VPN server at boot ====
+
+The systemd unit "openvpn-server" looks at startup for server configurations in /etc/openvpn server.
+In this case the configuration is called server.conf, but the .conf extension can be omitted in the systemctl command.
+
+```
+cp server.conf /etc/openvpn/server
+systemctl enable openvpn-server@server.service
+```
+
+It also exists a systemd unit called "openvpn" that can be used for openvpn clients. Finally it is possible to check the state of a unit through the command status:
+```
+systemctl status openvpn-server@server.service
+```
 
 
