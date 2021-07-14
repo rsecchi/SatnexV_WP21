@@ -41,6 +41,37 @@ easyrsa gen-dh
 which creates the file pki/dh.pem after a while.
 
 
+==== Creating OpenVPN server and client configuration files ========
+
+The following configuration code should be inserted in server.conf
+
+```
+; configuration file server.conf
+
+; The interface is TAP (a L2 encapsulation) and will appear 
+; in the server as tap0 interface
+dev tap0
+
+; The interface is persistent. This means that it exists 
+; even if the server does not run and should be created in advance
+; using the commmand "openvpn --mkdev --
+persist-tun
+
+
+; This sends a keepalive every 10 seconds for 2 minutes before
+; declaring the client dead
+keepalive 10 120
+
+
+; The server is use as a brige to the clients
+; The server address is 10.1.1.5/24 client are between .10 .20
+server-bridge 10.1.1.5 255.255.255.0 10.1.1.10 10.1.1.20
+
+```
+
+Then embed all the certificates:
+
+
 
 
 
