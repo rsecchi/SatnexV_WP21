@@ -65,6 +65,7 @@ main (int argc, char *argv[])
   tapBridge.SetAttribute ("DeviceName", StringValue ("tap-left"));
   tapBridge.Install (nodes.Get (0), devices.Get (0));
 
+  devices.Get(1)->SetAddress(Mac48Address("80:00:2e:00:00:01"));
 
   /* Creating bottleneck link */
 
@@ -102,6 +103,7 @@ main (int argc, char *argv[])
   ipv4.SetBase ("10.1.2.0", "255.255.255.0", "0.0.0.2");
   ipv4.Assign (NetDeviceContainer (devices2.Get (1)));
 
+  devices2.Get(1)->SetAddress(Mac48Address("80:00:2e:00:00:02"));
 
   /* Setup Routing */
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();  
@@ -118,10 +120,10 @@ main (int argc, char *argv[])
   Ptr<Ipv4StaticRouting> router1 = helper.GetStaticRouting(myip1);
 
   router0->AddNetworkRouteTo("10.1.2.0", "255.255.255.0", "0.0.0.0", 1);
-  router0->AddNetworkRouteTo("10.12.0.0", "255.255.255.0", "10.1.1.1", 2);
+  router0->AddNetworkRouteTo("10.1.12.0", "255.255.255.0", "10.1.1.1", 2);
   router0->SetDefaultRoute("10.1.3.1", 1);
   router1->AddNetworkRouteTo("10.1.1.0", "255.255.255.0", "0.0.0.0", 1);
-  router1->AddNetworkRouteTo("10.12.0.0", "255.255.255.0", "10.1.3.2", 1);
+  router1->AddNetworkRouteTo("10.1.12.0", "255.255.255.0", "10.1.3.2", 1);
   router1->SetDefaultRoute("10.1.2.1", 2);
 
 
