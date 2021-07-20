@@ -6,10 +6,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <sys/socket.h>
 #include <netpacket/packet.h>
-#include <net/ethernet.h> /* the L2 protocols */
+#include <net/ethernet.h>
 #include <net/if.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
@@ -59,11 +58,6 @@ void printpacket(struct sockaddr_ll* dev, struct iphdr* ipp)
 
 }
 
-void copyaddr(uint8_t* dst, uint8_t* src)
-{
-	for(int i=0; i<6; i++)
-		dst[i] = src[i];
-}
 
 int main(int argc, char **argv)
 {
