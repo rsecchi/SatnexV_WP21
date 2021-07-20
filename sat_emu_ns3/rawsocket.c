@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <netpacket/packet.h>
 #include <net/ethernet.h> /* the L2 protocols */
+#include <net/if.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
 #include <netinet/in.h>
@@ -31,29 +32,15 @@ uint8_t tap_dst_hwaddr[] = {0x80, 0x00, 0x2e, 0x00, 0x00, 0x01};
 
 int counter;
 
-int get_card_no(int pf, char* name)
+void printpacket(struct sockaddr_ll* dev, struct iphdr* ipp) 
 {
-	struct ifreq card;
-
-	strcpy(card.ifr_name, name);
-	if (ioctl(pf, SIOCGIFINDEX, &card) == -1) {
-		perror("SIOCGIFINDEX");
-		exit(1);
-	}
-
-	return card.ifr_ifindex;
-}
-
-void printpacket(struct sockaddr_ll* dev) 
-{
-	printf("%di -------- \n", ++counter);
 	printf("sll_family   %x\n", dev->sll_family);
 	printf("sll_protocol %x\n", dev->sll_protocol);
 	printf("sll_ifindex  %x\n", dev->sll_ifindex);
 	printf("sll_hatype   %x\n", dev->sll_hatype);
 	printf("sll_pkttype  %x\n", dev->sll_pkttype);
 	printf("sll_halen    %x\n", dev->sll_halen);
-	printf("ssl_addr:    %02x:%02x:%02x:%02x:%02x:%02x\n",
+	printf("sll_addr:    %02x:%02x:%02x:%02x:%02x:%02x\n",
 					dev->sll_addr[0],
 					dev->sll_addr[1],
 					dev->sll_addr[2],
@@ -61,6 +48,14 @@ void printpacket(struct sockaddr_ll* dev)
 					dev->sll_addr[4],
 					dev->sll_addr[5]);
 
+	uint8_t *ip_src = (uint8_t*)(&(ipp->saddr));
+	uint8_t *ip_dst = (uint8_t*)(&(ipp->daddr));
+
+
+	printf("%d.%d.%d.%d -> %d.%d.%d.%d\n",
+		ip_src[0], ip_src[1], ip_src[2], ip_src[3],
+		ip_dst[0], ip_dst[1], ip_dst[2], ip_dst[3]
+	);
 
 }
 
@@ -72,20 +67,15 @@ void copyaddr(uint8_t* dst, uint8_t* src)
 
 int main(int argc, char **argv)
 {
-	int cnt, sock_tap, sock_tun, sock2;
-	int tun, tap, dev;
+	int cnt, sock_tap, sock_tun;
 
 	unsigned char buf_frame[MAX_FRAME_LEN + ETH_LEN];
-	struct sockaddr_ll device;
+	struct sockaddr myaddr;
+	socklen_t mysize;
 	struct ether_header* ethp = (struct ether_header*) buf_frame;
 
 	struct sockaddr_ll tun_addr, tap_addr;
-	struct sockaddr_in tun_addr_dst;
-	socklen_t size_in;
-	const socklen_t size_out = sizeof(device);
-
-	struct sockaddr myaddr;
-	socklen_t mysize;
+	const socklen_t size_out = sizeof(tun_addr);
 
 
 	/* create a L2 RAW socket and bind it to tap */
@@ -93,13 +83,13 @@ int main(int argc, char **argv)
 		perror("socket() failed");
 		exit(1);
 	}
+
 	memset(&tap_addr, 0, size_out);
-	tap = get_card_no(sock_tap, tap_name);
 	tap_addr.sll_family = AF_PACKET;
 	tap_addr.sll_protocol = htons(ETH_P_IP);
-	tap_addr.sll_ifindex = tap;
+	tap_addr.sll_ifindex = if_nametoindex(tap_name);
 	tap_addr.sll_halen = 6;
-	copyaddr(tap_addr.sll_addr, tap_src_hwaddr);
+	memcpy(tap_addr.sll_addr, tap_src_hwaddr, 6);
 	bind(sock_tap, (struct sockaddr*)& tap_addr, size_out);	
 
 
@@ -109,30 +99,18 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	memset(&tun_addr, 0, size_out);
-	tun = get_card_no(sock_tun, tun_name);
 	tun_addr.sll_family = AF_PACKET;
-	tun_addr.sll_protocol = htons(ETH_P_IP);
-	tun_addr.sll_ifindex = tun;
+	tun_addr.sll_protocol = htons(ETH_P_ALL);
+	tun_addr.sll_ifindex = if_nametoindex(tun_name);
+	tun_addr.sll_hatype = PF_NETROM;
+	tun_addr.sll_pkttype = PACKET_HOST;
 	bind(sock_tun, (struct sockaddr*)& tun_addr, size_out);	
-
 
 	/* Destinations addresses */
 	/* init MAC header (to send over tap) */
-	copyaddr(ethp->ether_dhost, tap_dst_hwaddr);
-	copyaddr(ethp->ether_shost, tap_src_hwaddr);
+	memcpy(ethp->ether_dhost, tap_dst_hwaddr, 6);
+	memcpy(ethp->ether_shost, tap_src_hwaddr, 6);
 	ethp->ether_type = htons(ETHERTYPE_IP);
-
-
-	/* create an L3 RAW socket to send packet to TUN */
-	if ((sock2 = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) == -1) {
-		perror("socket() failed");
-		exit(1);
-	}
-	int on = 1;
-	if (setsockopt(sock2, IPPROTO_IP, IP_HDRINCL, &on, sizeof(on)) < 0) {
-		perror("setsockopt() for IP_HDRINCL error");
-		exit(1);
-	}
 
 	if (fork()) {
 
@@ -140,13 +118,19 @@ int main(int argc, char **argv)
 			while(1) {
 				cnt = recvfrom(sock_tun, buf_frame + ETH_LEN, MAX_FRAME_LEN, 
 							FLAGS, &myaddr, &mysize);
-
-				if (cnt<0) perror("raw error");
-				//printpacket((struct sockaddr_ll*)&myaddr);
+				/*
+				printf("\n----  %d  ----- \n", ++counter);
+				printf("TUN --> TAP\n");
+				printpacket((struct sockaddr_ll*)&tun_addr, 
+					(struct iphdr*)(buf_frame+ETH_LEN));
+				*/
+			
+				if (cnt<0) perror("tun rcv:");
+				
 			
 				cnt = sendto(sock_tap, 	buf_frame, cnt + ETH_LEN,
 							FLAGS, (struct sockaddr*)&tap_addr, size_out);
-				if (cnt<0) perror("raw error");
+				if (cnt<0) perror("tap send:");
 
 			}
 	}	
@@ -156,28 +140,20 @@ int main(int argc, char **argv)
 			while(1) {
 				cnt = recvfrom(sock_tap, buf_frame, MAX_FRAME_LEN, 
 							FLAGS, &myaddr, &mysize);
-				// printpacket((struct sockaddr_ll*)&myaddr);
-					//
-
-				struct iphdr* ipp = (struct iphdr*)(buf_frame + ETH_LEN);
-				uint8_t *ip_src = (uint8_t*)(&(ipp->saddr));
-				uint8_t *ip_dst = (uint8_t*)(&(ipp->daddr));
+				if (cnt<0) perror("tap recv:");
 
 				/*
-				printf("%d.%d.%d.%d -> %d.%d.%d.%d\n",
-					ip_src[0], ip_src[1], ip_src[2], ip_src[3],
-					ip_dst[0], ip_dst[1], ip_dst[2], ip_dst[3]
-				);
-				*/				
+				printf("\n----  %d  ----- \n", ++counter);
+				printf("TAP --> TUN\n");
+				printpacket((struct sockaddr_ll*)&myaddr,
+						(struct iphdr*)(buf_frame + ETH_LEN));
 
-				tun_addr_dst.sin_family =  AF_INET;
-				tun_addr_dst.sin_addr.s_addr = ipp->daddr; 
+				*/
 
-				cnt = sendto(sock2, buf_frame + ETH_LEN, cnt - ETH_LEN, 
-							FLAGS, (struct sockaddr*)&tun_addr_dst, 
-							sizeof(tun_addr_dst));
+				cnt = sendto(sock_tun, 	buf_frame + ETH_LEN, cnt - ETH_LEN,
+							FLAGS, (struct sockaddr*)&tun_addr, size_out);
 
-				if (cnt<0) perror("");
+				if (cnt<0) perror("tun send:");
 			}
 	}
 
