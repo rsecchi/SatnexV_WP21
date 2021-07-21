@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Name on the local interface on public network
-LOCAL_ETH=enp0s3
+LOCAL_ETH=wlp2s0
 
 # ns-3 directory 
-NS3_DIR=/root/workspace/SatnexV_WP21/ns-allinone-3.33/ns-3.33/
+NS3_DIR=/root/workspace/ns-allinone-3.31/ns-3.31/
 TUN2TAP=/root/workspace/SatnexV_WP21/sat_emu_ns3/bridge
 
 # Creates permanent TAP for ns-3
