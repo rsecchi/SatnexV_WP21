@@ -19,7 +19,7 @@ cp /path/to/SatnexV_WP21/sat_emu_ns3/satdelay.cc scratch/
 - Change the variables `LOCAL_ETH` and `NS3_DIR` in satconfig.sh to point to the right external interface (eg eth0) and to the directory of ns-3 respectively
 - Change the variable `ExecStart` in ns3sat.service to point to the script satconfig.sh
 - Copy satconfig.sh in /etc/systemd/system
-- Enable the ns3sat unit to be run at startup: `systemctl enable ns3sat.service`
+- Enable the ns3sat unit to be run at startup: `systemctl enable ns3sat.service` (the unit is called before OpenVPN_
 
 
 
