@@ -29,6 +29,7 @@ char tap_name[] = "tap-left";
 uint8_t tap_src_hwaddr[] = {0x56, 0x18, 0x4c, 0x7e, 0xd7, 0xf7};
 uint8_t tap_dst_hwaddr[] = {0x80, 0x00, 0x2e, 0x00, 0x00, 0x01};
 
+unsigned char buf_frame[MAX_FRAME_LEN + ETH_LEN];
 int counter;
 
 void printpacket(struct sockaddr_ll* dev, struct iphdr* ipp) 
@@ -63,13 +64,12 @@ int main(int argc, char **argv)
 {
 	int cnt, sock_tap, sock_tun;
 
-	unsigned char buf_frame[MAX_FRAME_LEN + ETH_LEN];
 	struct sockaddr myaddr;
-	socklen_t mysize;
+	socklen_t mysize = sizeof(struct sockaddr_ll);
 	struct ether_header* ethp = (struct ether_header*) buf_frame;
 
 	struct sockaddr_ll tun_addr, tap_addr;
-	const socklen_t size_out = sizeof(tun_addr);
+	const socklen_t size_out = sizeof(struct sockaddr_ll);
 
 
 	/* create a L2 RAW socket and bind it to tap */
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	memset(&tap_addr, 0, size_out);
+	memset(&tap_addr, 0, sizeof(struct sockaddr_ll));
 	tap_addr.sll_family = AF_PACKET;
 	tap_addr.sll_protocol = htons(ETH_P_IP);
 	tap_addr.sll_ifindex = if_nametoindex(tap_name);
@@ -92,12 +92,12 @@ int main(int argc, char **argv)
 		perror("socket() failed");
 		exit(1);
 	}
-	memset(&tun_addr, 0, size_out);
+	memset(&tun_addr, 0, sizeof(struct sockaddr_ll));
 	tun_addr.sll_family = AF_PACKET;
 	tun_addr.sll_protocol = htons(ETH_P_ALL);
 	tun_addr.sll_ifindex = if_nametoindex(tun_name);
-	tun_addr.sll_hatype = PF_NETROM;
-	tun_addr.sll_pkttype = PACKET_HOST;
+	//tun_addr.sll_hatype = PF_NETROM;
+	//tun_addr.sll_pkttype = PACKET_HOST;
 	bind(sock_tun, (struct sockaddr*)& tun_addr, size_out);	
 
 	/* Destinations addresses */
@@ -112,15 +112,15 @@ int main(int argc, char **argv)
 			while(1) {
 				cnt = recvfrom(sock_tun, buf_frame + ETH_LEN, MAX_FRAME_LEN, 
 							FLAGS, &myaddr, &mysize);
+
 				/*
 				printf("\n----  %d  ----- \n", ++counter);
 				printf("TUN --> TAP\n");
-				printpacket((struct sockaddr_ll*)&tun_addr, 
+				printpacket((struct sockaddr_ll*)&myaddr, 
 					(struct iphdr*)(buf_frame+ETH_LEN));
-				*/
-			
+				*/			
+
 				if (cnt<0) perror("tun rcv:");
-				
 			
 				cnt = sendto(sock_tap, 	buf_frame, cnt + ETH_LEN,
 							FLAGS, (struct sockaddr*)&tap_addr, size_out);
@@ -141,7 +141,6 @@ int main(int argc, char **argv)
 				printf("TAP --> TUN\n");
 				printpacket((struct sockaddr_ll*)&myaddr,
 						(struct iphdr*)(buf_frame + ETH_LEN));
-
 				*/
 
 				cnt = sendto(sock_tun, 	buf_frame + ETH_LEN, cnt - ETH_LEN,
