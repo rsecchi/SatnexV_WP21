@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include "ns3/csma-module.h"
+#include "ns3/simulator-impl.h"
 #include "ns3/core-module.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/internet-module.h"
@@ -49,6 +50,8 @@ main (int argc, char *argv[])
   GlobalValue::Bind ("SimulatorImplementationType", StringValue ("ns3::RealtimeSimulatorImpl"));
   GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
 
+  Config::SetDefault ("ns3::RealtimeSimulatorImpl::SynchronizationMode",
+   EnumValue (RealtimeSimulatorImpl::SYNC_HARD_LIMIT));
 
   /* Access network (LAN) */
   NodeContainer nodes; 
@@ -78,10 +81,19 @@ main (int argc, char *argv[])
 
  
   PointToPointHelper p2p;
-  p2p.SetDeviceAttribute("DataRate", StringValue ("500Kbps"));
   p2p.SetChannelAttribute("Delay", StringValue ("250ms"));
 
   NetDeviceContainer devs = p2p.Install (linknodes);
+
+  /* Creating asymmetric link */
+  Ptr<PointToPointNetDevice> mydev;
+  // dowlink  
+  mydev = devs.Get (0)->GetObject<PointToPointNetDevice>();
+  mydev->SetAttribute("DataRate", StringValue ("5000Kbps"));
+
+  // uplink
+  mydev = devs.Get (1)->GetObject<PointToPointNetDevice>();
+  mydev->SetAttribute("DataRate", StringValue ("200Kbps"));
 
   Ipv4AddressHelper ipv4;
   ipv4.SetBase ("10.1.3.0", "255.255.255.0");
