@@ -17,6 +17,13 @@ do
 
 	echo $fname $start $end
 
+	if [ ${fname: -3} == ".gz" ]; then
+		TMPFILE=$(mktemp -u)
+		trap 'rm -f "$TMPFILE"' EXIT
+		gzip -d $fname --stdout > $TMPFILE
+		fname=$TMPFILE
+	fi
+
 	./udprate $fname $BINSIZE_MS $NUM_BINS $start $end $label > $TMP0
 
 	awk 'NR==1' $TMP0 > $TMP1
@@ -27,5 +34,5 @@ done
 cat $TMP1 $TMP2 > GT.csv
 
 
-./ml_engine.py
+#./ml_engine.py
 
