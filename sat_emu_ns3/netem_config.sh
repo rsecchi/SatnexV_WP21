@@ -13,6 +13,7 @@ tc qdisc del dev $LOCAL_TUN root
 tc qdisc add dev $LOCAL_TUN root handle 1: tbf rate $BANDWIDTH  buffer 1600 limit 3000
 tc qdisc add dev $LOCAL_TUN parent 1:1 handle 10: netem delay $DELAY $DELAY_VAR
 
+iptables -t nat -F
 iptables -t nat -A POSTROUTING -o $LOCAL_ETH -j MASQUERADE 
 echo 1 > /proc/sys/net/ipv4/ip_forward
 
