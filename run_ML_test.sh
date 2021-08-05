@@ -1,7 +1,7 @@
 #!/bin/bash
 
-BINSIZE_MS=$1
-NUM_BINS=$2
+BINSIZE_MS=${1:-100}
+NUM_BINS=${2:-100}
 
 trap 'rm -f "$TMP0" "$TMP1" "$TMP2"' EXIT
 TMP0=$(mktemp) || exit 1
