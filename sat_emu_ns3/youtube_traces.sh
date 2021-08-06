@@ -1,15 +1,19 @@
 #!/bin/bash
 
+NETEM_CONF_DIR=/root/workspace/SatnexV_WP21/sat_emu_ns3/
+OUTPUT_DIR=/root/workspace/SatnexV_WP21/QUIC_traces/
 
+LOCAL_TUN=tun0
 
 run_trace() {
-	/root/workspace/SatnexV_WP21/sat_emu_ns3/netem_config.sh $1 $2 $3 $4
-	FILE_DUMP=youtube_$1_$2_$3_$4.pcap 
-	tcpdump -U -s 64 -i utun2 -w $FILE_DUMP udp &
+    echo "RTT=$1 RTTVAR=$2 BANDWIDTH=$3 QUEUESIZE=$4"
+	$NETEM_CONF_DIR/netem_config.sh $1 $2 $3 $4
+	FILE_DUMP=$OUTPUT_DIR/youtube_$1_$2_$3_$4.pcap 
+	tcpdump -U -s 64 -i $LOCAL_TUN -w $FILE_DUMP udp &
 	TD_PID=$!
-	sleep 3600
+	sleep 10
 	kill -9 $TD_PID
-	rm $FILE_DUMP.gz
+	rm -f $FILE_DUMP.gz
 	gzip $FILE_DUMP
 }
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-IF=$1
+IF=${1:-tun0}
 
 RXprev=$(ifconfig $IF | grep "RX p" | awk '{print $5}')
 TXprev=$(ifconfig $IF | grep "TX p" | awk '{print $5}')
