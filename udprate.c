@@ -47,7 +47,7 @@ void pre_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 	now = delta(h->ts, start_time);
 	
 	if (now >= begin_us && now <= end_us) {
-		total_data += h->caplen;
+		total_data += h->len;
 		end_time = now;
 	}
 }
@@ -63,7 +63,7 @@ void main_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 		started = 1;
 		bin_end = tick_us;
 		
-		curr_data = h->caplen;
+		curr_data = h->len;
 		return;
 	}
 
@@ -87,8 +87,7 @@ void main_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 		curr_data = 0;
 	}
 
-	curr_data += h->caplen;
-
+	curr_data += h->len;
 }
 
 int main(int argc, char* argv[])
@@ -130,6 +129,7 @@ int main(int argc, char* argv[])
 	duration_us = end_time - begin_us;
 	bitrate = (((double)(total_data)) / duration_us)*1e6;
 	scale_factor = 1e6/(bitrate*tick_us);
+    scale_factor = 1;
 
 	/*
 	printf("total data: %lld\n", total_data);
