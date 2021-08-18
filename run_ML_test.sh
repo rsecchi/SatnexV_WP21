@@ -2,18 +2,22 @@
 
 BINSIZE_MS=${1:-100}
 NUM_BINS=${2:-100}
+FILENAMES=${3:-filenames}
 
 trap 'rm -f "$TMP0" "$TMP1" "$TMP2"' EXIT
 TMP0=$(mktemp) || exit 1
 TMP1=$(mktemp) || exit 1
 TMP2=$(mktemp) || exit 1
 
-cat filenames |\
+cat $FILENAMES |\
 while read fname start end label cmt
 do
 
 	if [ -z $fname ]; then continue; fi
 	if [ $fname = "#" ]; then continue; fi
+	if [ $fname = "@" ]; then
+		eval $start $end $label $cmt
+	fi
 
 	echo $fname $start $end
 

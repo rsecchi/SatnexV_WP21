@@ -2,8 +2,12 @@
 #include <pcap.h>
 #include <stdio.h>
 #include <limits.h>
+#include <string.h>
+#include <math.h>
 
-/* CFLAGS=-lpcap make udprate */
+/* compile with:
+gcc -Ilibpcap/pcap/ -Ilibpcap udprate.c libpcap/libpcap.a -libverbs -o udprate -ldbus-1 -lm
+*/
 
 #define MAX_FEATURES   512
 
@@ -19,10 +23,19 @@ long long now;
 long long bin_end;
 
 char* label;
+
+/* normalization variables */
+char* norm_types[] = {"none", "bitrate", "stdnorm", "minmax", "cap"};
+int norm_type;
+
 double bitrate;
 double scale_factor;
+double variance, stddev;
+long long max;
 
 long long total_data;
+long long total_data2;
+unsigned int n_data;
 long long duration_us;
 
 long long delta(struct timeval t1, struct timeval t2)
@@ -37,20 +50,62 @@ long long delta(struct timeval t1, struct timeval t2)
 
 void pre_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
+
+	int k;
+
 	if (!started)
 	{
 		start_time = h->ts;
 		started = 1;
+		bin_end = tick_us;
+		
+		curr_data = h->len;
 		return;
 	}
 
 	now = delta(h->ts, start_time);
-	
-	if (now >= begin_us && now <= end_us) {
-		total_data += h->len;
-		end_time = now;
+
+	while  (now > bin_end) {
+		if (now > begin_us && now < end_us) {
+			total_data  += curr_data;
+			end_time = now;
+			total_data2 += curr_data * curr_data;
+			n_data++;
+			if (curr_data>=max)
+				max = curr_data;
+		}
+		bin_end += tick_us;
+		curr_data = 0;
 	}
+
+	curr_data += h->len;
 }
+
+
+double norm(long long feat)
+{
+	switch(norm_type)
+	{
+		case 0:		// not normalized (default)
+			return feat;
+
+		case 1:     // normalized to the average bitrate
+			return (feat*1e6/tick_us)/bitrate;
+
+		case 2:     // standard normalization
+			return (feat - bitrate*tick_us/1e6)/stddev;
+
+		case 3:     // divided by max
+			return  ((double)feat)/max;
+
+		defaut:
+			return feat;
+	}
+
+
+	return feat;
+}
+
 
 void main_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
@@ -74,11 +129,9 @@ void main_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 			feature[col] = curr_data;
 			col++;
 			if (col==num_intv) {
-				for(k=0; k<num_intv-1; k++)
-					printf("%10.5lf,", feature[k]*scale_factor);
-				printf("%10.5lf, %s\n", 
-						feature[num_intv-1]*scale_factor,
-					 	label);
+				for(k=0; k<num_intv; k++)
+					printf("%10.5lf,", norm(feature[k]));
+				printf("%s\n", label);
 				col = 0;
 			}
 			
@@ -93,8 +146,9 @@ void main_loop(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 int main(int argc, char* argv[])
 {
 	int i;
-	char err_string[PCAP_ERRBUF_SIZE];
+	char err_string[PCAP_ERRBUF_SIZE], *norm_env;
 	pcap_t *handle = NULL;
+
 
 	if (argc!=7) {
 		fprintf(stderr, "usage: %s <file> <interv_ms> "
@@ -124,21 +178,39 @@ int main(int argc, char* argv[])
 
 	label = argv[6];
 
+	/* normalization */
+	/* retrieve type of normalization from env */
+	norm_env = getenv("NORM_TYPE");
+	if (norm_env)
+		for(i=0; i<sizeof(norm_types)/sizeof(char*); i++)
+			if (!strcmp(norm_env, norm_types[i])) norm_type = i;
+
+	/* retrieve statistics for normalization */
 	pcap_loop(handle, -1, pre_loop, NULL);
 	pcap_close(handle);
+
+	/* normalization variables */
 	duration_us = end_time - begin_us;
 	bitrate = (((double)(total_data)) / duration_us)*1e6;
 	scale_factor = 1e6/(bitrate*tick_us);
-    scale_factor = 1;
+	variance = (double)(total_data2 - total_data*total_data/n_data)/(n_data - 1);
+	stddev = sqrt(variance);	
 
 	/*
 	printf("total data: %lld\n", total_data);
+	printf("total data2: %lld\n", total_data2);
+	printf("n_data: %d\n", n_data);
+	printf("max: %lld\n", max);
 	printf("total duration (us): %lld\n", duration_us);
 	printf("bitrate (bps): %lf\n", bitrate);
 	printf("scale_factor: %.15lf\n", scale_factor);
+	printf("standard deviation: %.15f\n", stddev);
 
 	exit(0);
 	*/
+
+	/* feature extration */
+	
 
 	// print header
 	for(i=0; i<num_intv; i++)
@@ -148,6 +220,6 @@ int main(int argc, char* argv[])
 	handle = pcap_open_offline(argv[1], err_string);
 	started = 0;
 	pcap_loop(handle, -1, main_loop, NULL);
-	fprintf(stderr, "bitrate (bps): %lf\n", bitrate);
+	fprintf(stderr, "bitrate (bps): %lf\n", bitrate*8);
 }
 
