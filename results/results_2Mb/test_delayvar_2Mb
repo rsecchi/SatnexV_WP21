@@ -1,0 +1,6 @@
+
+# Test with wired training
+/root/workspace/SatnexV_WP21/QUIC_traces/rtp_50ms_50ms_2Mbit_10000.pcap.gz   0 -1  0
+/root/workspace/SatnexV_WP21/QUIC_traces/youtube_50ms_50ms_2Mbit_50.pcap.gz  0 -1  1
+
+

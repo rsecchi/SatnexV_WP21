@@ -27,6 +27,7 @@ graph() {
 	gnuplot  my.plt
 
 	mv temp.eps s_$PREFIX.eps 
+	rm trace
 }
 
 graph test_nodelay_2Mb_
