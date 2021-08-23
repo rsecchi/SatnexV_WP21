@@ -35,7 +35,7 @@ tc qdisc del dev $LOCAL_ETH root
 tc qdisc add dev $LOCAL_ETH root netem delay $DELAY $DELAYVAR
 
 iptables -t nat -F
-iptables -t nat -A POSTROUTING -o $LOCAL_ETH -j MASQUERADE 
+# iptables -t nat -A POSTROUTING -o $LOCAL_ETH -j MASQUERADE 
 echo 1 > /proc/sys/net/ipv4/ip_forward
 
 

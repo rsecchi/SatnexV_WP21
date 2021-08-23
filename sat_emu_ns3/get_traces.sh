@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 NETEM_CONF_DIR=/root/workspace/SatnexV_WP21/sat_emu_ns3
 OUTPUT_DIR=/root/workspace/SatnexV_WP21/QUIC_traces
 
@@ -20,10 +19,10 @@ run_trace() {
 }
 
 
-run_trace  10ms   1ms 2Mbit 10000
-run_trace 200ms   1ms 2Mbit 10000
-run_trace  50ms  50ms 2Mbit 10000
-run_trace  10ms   1ms 5Mbit 10000
-run_trace 200ms   1ms 5Mbit 10000
+# run_trace  10ms   1ms 2Mbit 10000
+# run_trace 200ms   1ms 2Mbit 10000
+# run_trace  50ms  50ms 2Mbit 10000
+# run_trace  10ms   1ms 5Mbit 10000
+# run_trace 200ms   1ms 5Mbit 10000
 run_trace  50ms  50ms 5Mbit 10000
 

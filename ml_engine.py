@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import sys
+import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -14,20 +15,25 @@ pd.set_option('mode.chained_assignment', None)
 # Number of bootstrap iterations
 n_rounds = 200
 
-# Separate data test from data
-data_in = pd.read_csv('GT.csv')
-data_in['label'] = data_in['label'].astype(str)
+# Open file
+tag = os.environ.get('TAG')
+if (tag == None):
+	myfile = "GT.csv"
+else:
+	myfile = "GT"+tag+".csv"
+data_in = pd.read_csv(myfile)
 
+# Separate data test from data
+data_in['label'] = data_in['label'].astype(str)
 test_inputs = data_in['label'].str.contains('T')
- 
 data = data_in.loc[~test_inputs]
 data_test = data_in.loc[test_inputs]
 
 if not data_test.empty:
 	data_test_X = data_test.drop('label', axis=1)
 	data_test_y = data_test['label'].str.replace('T', '')
-	size_data_test0 = len(data_test.loc[data['label'] == '0'])
-	size_data_test1 = len(data_test.loc[data['label'] == '1'])
+	size_data_test0 = len(data_test.loc[data_test['label'] == 'T0'])
+	size_data_test1 = len(data_test.loc[data_test['label'] == 'T1'])
 	print("Data test present: label0=", size_data_test0, 
 		                     "label1=", size_data_test1)
 
@@ -36,6 +42,7 @@ size_train_label0 = len(data.loc[data['label'] == '0'])
 size_train_label1 = len(data.loc[data['label'] == '1'])
 print("train samples: label0=", size_train_label0,
       "label1 = ", size_train_label1);
+
 
 
 # Instantiates classifiers
@@ -52,8 +59,8 @@ add( RandomForestClassifier(n_estimators=20), "RF(n=20)")
 add( RandomForestClassifier(n_estimators=10), "RF(n=10)")
 add( RandomForestClassifier(n_estimators=5),  "RF(n=5)")
 add( RandomForestClassifier(n_estimators=2),  "RF(n=2)")
-add( RandomForestClassifier(n_estimators=10, max_leaf_nodes=50),  "RF(n=2,m=50)")
-add( RandomForestClassifier(n_estimators=10, max_leaf_nodes=20),  "RF(n=2,m=20)")
+add( RandomForestClassifier(n_estimators=10, max_leaf_nodes=50),  "RF(n=10,m=50)")
+add( RandomForestClassifier(n_estimators=10, max_leaf_nodes=20),  "RF(n=10,m=20)")
 add( svm.SVC(), "SVC" )
 add( MLPClassifier(hidden_layer_sizes=[12], max_iter=1000), "NN(12)" )
 add( MLPClassifier(hidden_layer_sizes=[6,6], max_iter=1000), "NN(6,6)" )

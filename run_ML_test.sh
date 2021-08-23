@@ -35,8 +35,8 @@ do
 		
 done
 
-cat $TMP1 $TMP2 > GT.csv
-
+echo cat $TMP1 $TMP2 \> GT${TAG}.csv > log
+cat $TMP1 $TMP2 > GT${TAG}.csv 
 
 ./ml_engine.py
 
