@@ -21,6 +21,9 @@ if (tag == None):
 	myfile = "GT.csv"
 else:
 	myfile = "GT"+tag+".csv"
+# optional 
+if (len(sys.argv) == 2):
+	myfile = sys.argv[1]
 data_in = pd.read_csv(myfile)
 
 # Separate data test from data
@@ -53,27 +56,40 @@ def add(clf, name):
 	clf.scores = list();   # list of scores within a classifier
 
 # We use default params' except for classifier size
-add( KNeighborsClassifier(n_neighbors=3), "KN(3)");
-add( KNeighborsClassifier(n_neighbors=5), "KN(5)");
-add( RandomForestClassifier(n_estimators=20), "RF(n=20)")
-add( RandomForestClassifier(n_estimators=10), "RF(n=10)")
-add( RandomForestClassifier(n_estimators=5),  "RF(n=5)")
-add( RandomForestClassifier(n_estimators=2),  "RF(n=2)")
-add( RandomForestClassifier(n_estimators=10, max_leaf_nodes=50),  "RF(n=10,m=50)")
-add( RandomForestClassifier(n_estimators=10, max_leaf_nodes=20),  "RF(n=10,m=20)")
-add( svm.SVC(), "SVC" )
-add( MLPClassifier(hidden_layer_sizes=[12], max_iter=1000), "NN(12)" )
-add( MLPClassifier(hidden_layer_sizes=[6,6], max_iter=1000), "NN(6,6)" )
-add( MLPClassifier(hidden_layer_sizes=[4,4,4], max_iter=1000), "NN(4,4,4)" )
-add( MLPClassifier(hidden_layer_sizes=[24], max_iter=1000), "NN(24)" )
-add( MLPClassifier(hidden_layer_sizes=[12,12], max_iter=1000), "NN(12,12)" )
-add( MLPClassifier(hidden_layer_sizes=[8,8,8], max_iter=1000), "NN(8,8,8)" )
+#add( KNeighborsClassifier(n_neighbors=3), "KN(3)");
+#add( KNeighborsClassifier(n_neighbors=5), "KN(5)");
+#add( RandomForestClassifier(n_estimators=20), "RF(n=20)")
+#add( RandomForestClassifier(n_estimators=10), "RF(n=10)")
+#add( RandomForestClassifier(n_estimators=5),  "RF(n=5)")
+#add( RandomForestClassifier(n_estimators=2),  "RF(n=2)")
+#add( RandomForestClassifier(n_estimators=10, max_leaf_nodes=50),  "RF(n=10,m=50)")
+#add( RandomForestClassifier(n_estimators=10, max_leaf_nodes=20),  "RF(n=10,m=20)")
+#add( svm.SVC(), "SVC" )
+#add( MLPClassifier(hidden_layer_sizes=[12], max_iter=1000), "NN(12)" )
+#add( MLPClassifier(hidden_layer_sizes=[6,6], max_iter=1000), "NN(6,6)" )
+#add( MLPClassifier(hidden_layer_sizes=[4,4,4], max_iter=1000), "NN(4,4,4)" )
 
+#add( MLPClassifier(hidden_layer_sizes=[24],    max_iter=2000), "NN(24)" )
+#add( MLPClassifier(hidden_layer_sizes=[12,12], max_iter=2000), "NN(12,12)" )
+#add( MLPClassifier(hidden_layer_sizes=[8,8,8], max_iter=2000), "NN(8,8,8)" )
+#
+add( MLPClassifier(hidden_layer_sizes=[48],    max_iter=2000), "NN(48)" )
+add( MLPClassifier(hidden_layer_sizes=[24,24], max_iter=2000), "NN(24,24)" )
+add( MLPClassifier(hidden_layer_sizes=[16,16,16], max_iter=2000), "NN(16,16,16)" )
+
+add( MLPClassifier(hidden_layer_sizes=[96],    max_iter=2000), "NN(96)" )
+add( MLPClassifier(hidden_layer_sizes=[48,48], max_iter=2000), "NN(48,48)" )
+add( MLPClassifier(hidden_layer_sizes=[32,32,32], max_iter=2000), "NN(32,32,32)" )
+
+add( MLPClassifier(hidden_layer_sizes=[192],    max_iter=2000), "NN(192)" )
+add( MLPClassifier(hidden_layer_sizes=[96,96], max_iter=2000), "NN(96,96)" )
+add( MLPClassifier(hidden_layer_sizes=[64,64,64], max_iter=2000), "NN(64,64,64)" )
 
 # Training & testing
 X = data.drop('label', axis=1)
 y = data['label']
 for i in range(n_rounds):
+	print("#", i,": ", end='', flush=True, file=sys.stderr);
 	Xtr, Xt, ytr, yt = train_test_split(X, y, test_size=0.2, random_state=i)
 	for el in classifiers:
 		print(el.name, " ", end='',flush=True, file=sys.stderr);
