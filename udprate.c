@@ -7,6 +7,9 @@
 
 /* compile with:
 gcc -Ilibpcap/pcap/ -Ilibpcap udprate.c libpcap/libpcap.a -libverbs -o udprate -ldbus-1 -lm
+
+Remember to check if the libpcap supports large files
+
 */
 
 #define MAX_FEATURES   512
